@@ -182,6 +182,7 @@ def synthesise(
 def run_inference(args):
     print(f"Config:     {args.config}")
     print(f"Checkpoint: {args.checkpoint}")
+    print(f"Root path:  {args.root_path or '(none — using absolute paths)'}")
     print(f"Output dir: {args.output_dir}")
     print(f"Alpha={args.alpha}  Beta={args.beta}  Diffusion steps={args.diffusion_steps}")
 
@@ -201,7 +202,7 @@ def run_inference(args):
 
     for idx, row in tqdm(inference_df.iterrows(), total=len(inference_df), desc="Inference"):
         text = row["transcript"]
-        ref_path = row["speaker_files"]
+        ref_path = os.path.join(args.root_path, row["speaker_files"])
 
         # Copy reference to output for easy side-by-side comparison
         shutil.copy(ref_path, os.path.join(ref_dir, os.path.basename(ref_path)))
@@ -253,6 +254,12 @@ def _parse_args():
         type=str,
         required=True,
         help="CSV with columns: transcript, speaker_files.",
+    )
+    parser.add_argument(
+        "--root_path",
+        type=str,
+        default="",
+        help="Root directory for LibriTTS .wav files (prepended to speaker_files paths).",
     )
     parser.add_argument(
         "--output_dir",

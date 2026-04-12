@@ -145,10 +145,11 @@ Checkpoints are saved to `log_dir/` every `save_freq` epochs as `epoch_2nd_NNNNN
 
 ```bash
 python infer.py \
-    --config   path/to/run_dir/config_unlearning.yml \
-    --checkpoint path/to/run_dir/last.pth \
-    --inference_csv path/to/test.csv \
-    --output_dir ./outputs \
+    --config        path/to/run_dir/config_unlearning.yml \
+    --checkpoint    path/to/run_dir/last.pth \
+    --inference_csv metadata/LibriTTS/1_speaker/test/forget_speaker_test.csv \
+    --root_path     /path/to/LibriTTS \
+    --output_dir    ./outputs \
     --utterance_samples 5 \
     --diffusion_samples 3
 ```
@@ -171,6 +172,7 @@ outputs/
 | `--config` | required | Path to the config YAML |
 | `--checkpoint` | required | Path to checkpoint (`.pth`) |
 | `--inference_csv` | required | CSV with `transcript` and `speaker_files` columns |
+| `--root_path` | `""` | Root directory for LibriTTS `.wav` files (prepended to `speaker_files` paths) |
 | `--output_dir` | `./outputs` | Directory for generated audio |
 | `--utterance_samples` | `0` (all) | Number of rows to randomly sample from the CSV |
 | `--diffusion_samples` | `1` | Independent waveforms to generate per utterance |
