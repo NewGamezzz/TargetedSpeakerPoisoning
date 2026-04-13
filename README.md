@@ -10,7 +10,7 @@ We test the code with Python 3.10.
 ```bash
 pip install -r requirements.txt
 ```
-
+**2. Install espeak [TODO add version ...]
 
 ## Inference
 **1. Download a model**
