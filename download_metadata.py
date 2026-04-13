@@ -53,9 +53,7 @@ TRAIN_FILES = [
 ]
 
 TEST_FILES = [
-    "test/forget_speaker_test.csv",
     "test/forget_speaker_test_test_clean.csv",
-    "test/retain_speaker_test.csv",
     "test/retain_speaker_test_test_clean.csv",
 ]
 
