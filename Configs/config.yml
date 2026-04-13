@@ -139,9 +139,8 @@ optimizer_params:
   ft_lr: 0.0001       # Learning rate for acoustic fine-tuning modules
 
 # ---------------------------------------------------------------------------
-# Weights & Biases logging
+# TensorBoard logging
 # ---------------------------------------------------------------------------
-wandb:
+tensorboard:
   enable: true
-  project: "styletts2-unlearning"
   # name: "my-run"    # Optional; defaults to a timestamp + mode suffix

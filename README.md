@@ -188,7 +188,13 @@ python train.py --config Configs/config_unlearning.yml --mode triplet --lambda_t
 | `--max_iter` | `60,000` | Total gradient steps (cycles the dataloader; overrides epoch count) |
 | `--comment` | None | Suffix appended to the W&B run name |
 
-Checkpoints are saved to `log_dir/` as `epoch_2nd_NNNNN.pth` and `last.pth`. Set `wandb.enable: false` in the config to disable W&B logging.
+Checkpoints are saved to `log_dir/` as `epoch_2nd_NNNNN.pth` and `last.pth`. TensorBoard logs are written to `log_dir/<run_name>/tensorboard/`. Launch the viewer with:
+
+```bash
+tensorboard --logdir Models/Unlearning
+```
+
+Set `tensorboard.enable: false` in the config to disable logging.
 
 Only the diffusion module is updated during training — all other components are frozen.
 

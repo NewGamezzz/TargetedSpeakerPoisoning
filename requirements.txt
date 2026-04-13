@@ -12,6 +12,7 @@ transformers
 einops
 einops-exts
 tqdm
+tensorboard
 typing
 typing-extensions
 pandas

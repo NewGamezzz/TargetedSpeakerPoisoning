@@ -14,7 +14,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import torchaudio
-import wandb
+from torch.utils.tensorboard import SummaryWriter
 import yaml
 from munch import Munch
 from sklearn.model_selection import train_test_split
@@ -76,11 +76,14 @@ def print_learnable_parameters(model_dict):
     print(f"\nTotal: {total}  Learnable: {learnable} ({100*learnable/total:.2f}%)")
 
 
-def _wandb_log(metrics: dict, step: int):
-    try:
-        wandb.log(metrics, step=step)
-    except Exception:
-        pass
+_writer = None
+
+
+def _tb_log(metrics: dict, step: int):
+    if _writer is None:
+        return
+    for key, value in metrics.items():
+        _writer.add_scalar(key, value, step)
 
 
 # ---------------------------------------------------------------------------
@@ -135,26 +138,24 @@ def main(
     device = _device()
 
     # -----------------------------------------------------------------------
-    # Logging (wandb)
+    # Logging (TensorBoard)
     # -----------------------------------------------------------------------
-    wandb_cfg = config.get("wandb", {})
+    global _writer
+
+    tb_cfg = config.get("tensorboard", {})
     log_dir = config["log_dir"]
 
-    if wandb_cfg.get("enable", True):
-        run_name = wandb_cfg.get("name") or datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        if comment:
-            run_name += f"_{comment}"
-        run_name += f"_{mode}"
-        log_dir = osp.join(log_dir, run_name)
-        wandb.login()  # relies on WANDB_API_KEY env var or prior `wandb login`
-        wandb.init(
-            project=wandb_cfg.get("project", "styletts2-unlearning"),
-            name=run_name,
-            dir=log_dir,
-            config={**config, "mode": mode},
-        )
+    run_name = tb_cfg.get("name") or datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    if comment:
+        run_name += f"_{comment}"
+    run_name += f"_{mode}"
+    log_dir = osp.join(log_dir, run_name)
+
+    if tb_cfg.get("enable", True):
+        _writer = SummaryWriter(log_dir=osp.join(log_dir, "tensorboard"))
+        print(f"TensorBoard logs: {osp.join(log_dir, 'tensorboard')}")
     else:
-        wandb.init(mode="disabled")
+        _writer = None
 
     os.makedirs(log_dir, exist_ok=True)
     try:
@@ -361,7 +362,7 @@ def main(
             optimizer.step("diffusion")
 
             iters += 1
-            _wandb_log({**log_dict, "train/epoch": epoch, "train/iter": iters}, iters)
+            _tb_log({**log_dict, "train/epoch": epoch, "train/iter": iters}, iters)
 
         # -------------------------------------------------------------------
         # Validation
@@ -396,6 +397,9 @@ def main(
             cfg_out = osp.join(log_dir, osp.basename(config_path))
             with open(cfg_out, "w") as f:
                 yaml.dump(config, f, default_flow_style=True)
+
+    if _writer is not None:
+        _writer.close()
 
 
 def _run_validation(val_loader, model, sampler, loss_params, device, mode, epoch, iters):
@@ -438,7 +442,7 @@ def _run_validation(val_loader, model, sampler, loss_params, device, mode, epoch
             n_batches += 1
 
     avg = total_loss / max(1, n_batches)
-    _wandb_log({"val/g_loss": avg, "val/epoch": epoch}, iters)
+    _tb_log({"val/g_loss": avg, "val/epoch": epoch}, iters)
     return avg
 
 
@@ -488,7 +492,7 @@ def _parse_args():
         "--comment",
         type=str,
         default=None,
-        help="Optional suffix appended to the wandb run name.",
+        help="Optional suffix appended to the run name.",
     )
     return parser.parse_args()
 
