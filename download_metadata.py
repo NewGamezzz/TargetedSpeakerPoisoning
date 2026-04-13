@@ -34,6 +34,7 @@ import os
 import zipfile
 
 from huggingface_hub import hf_hub_download
+from tqdm import tqdm
 
 # HuggingFace repo ID for each setting
 REPOS = {
@@ -135,7 +136,11 @@ def download_metadata(
                     )
                     print(f"  Extracting style_vectors.zip ...")
                     with zipfile.ZipFile(zip_local, "r") as zf:
-                        zf.extractall(extract_dir)
+                        members = zf.infolist()
+                        with tqdm(members, desc="  Extracting", unit="file") as pbar:
+                            for member in pbar:
+                                zf.extract(member, extract_dir)
+                                pbar.set_postfix(file=member.filename[-40:])
                     os.remove(zip_local)
                     print(f"  Extracted to: {extract_dir}")
                 except Exception as e:

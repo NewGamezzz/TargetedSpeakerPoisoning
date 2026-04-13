@@ -1,188 +1,217 @@
 # StyleTTS2 Speaker Unlearning
 
-Fine-tuning framework for **machine unlearning** applied to [StyleTTS2](https://github.com/yl4579/StyleTTS2). Given a pretrained StyleTTS2 checkpoint, this codebase fine-tunes the diffusion module so the model forgets a specific speaker's voice while retaining synthesis quality for all other speakers.
+Machine unlearning for [StyleTTS2](https://github.com/yl4579/StyleTTS2) — fine-tunes the diffusion module to erase a target speaker's voice while preserving synthesis quality for all other speakers.
 
-## Requirements
+---
 
+## Quick Start
+
+**1. Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-You also need:
-- A pretrained **StyleTTS2 second-stage checkpoint**. Download the LibriTTS model from [https://huggingface.co/yl4579/StyleTTS2-LibriTTS/tree/main](https://huggingface.co/yl4579/StyleTTS2-LibriTTS/tree/main). Place the files according to the paths in the config:
-  - Epoch checkpoint → `Models/LibriTTS/epochs_2nd_00020.pth`
-
-## Data Preparation
-
-All metadata files and pre-computed style vectors are available on HuggingFace:
-**[Dataset: YOUR_HUGGINGFACE_DATASET_LINK]**
-
-The raw audio must be downloaded separately from [LibriTTS](https://www.openslr.org/60/).
-
-### Dataset settings
-
-Three experimental settings are provided, varying the number of forget speakers:
-
-| Setting | Forget speakers |
-|---------|----------------|
-| `1_speaker` | 1 |
-| `15_speakers` | 15 |
-| `100_speakers` | 100 |
-
-Select a setting by pointing `forget_speaker_file` in the config to the corresponding CSV (e.g. `metadata/settings/1_speaker/forget_train.csv`). The training data (`diffusion_data.csv`) and style vectors are shared across all settings.
-
-### Training data CSV (`dataset_path`)
-
-| Column | Description |
-|--------|-------------|
-| `filepath` | Relative path to a pre-computed style vector (`.pt`), resolved against `style_root_path` |
-| `text` | Phonemised transcript |
-| `speaker_id` | Speaker identifier |
-| `ref_filepath` | Relative path to the reference `.wav` for this utterance, resolved against `root_path` |
-
-### Forget-speaker CSV (`forget_speaker_file`)
-
-| Column | Description |
-|--------|-------------|
-| `speaker_files` | Relative path to a `.wav` file for the speaker to be forgotten, resolved against `root_path` |
-| `speaker_ids` | Speaker identifier |
-
-### Inference / evaluation CSV (`--inference_csv`)
-
-| Column | Description |
-|--------|-------------|
-| `transcript` | Text to synthesize |
-| `speaker_files` | Relative path to the reference audio (`.wav`), resolved against `root_path` |
-
-
-## Generating Style Vectors (optional)
-
-Pre-computed style vectors are provided on HuggingFace. If you prefer to generate them yourself from a pretrained checkpoint, use `gen_diffusion_ground_truth.py`:
-
+**2. Download a model**
 ```bash
-python gen_diffusion_ground_truth.py \
-    --input_csv      metadata/retain_speaker_train.csv \
-    --config_path    Configs/config_unlearning.yml \
-    --checkpoint_path Models/LibriTTS/epochs_2nd_00020.pth \
-    --root_path      /path/to/LibriTTS \
-    --output_dir     style_vectors \
-    --diffusion_samples 2 \
-    --resume
+python download_weights.py --output_dir Models --setting 15 --mode tgu
 ```
 
-This reads each row from the input CSV, runs the diffusion sampler to produce style tensors, and writes them as `.pt` files under `style_vectors/diffusion/` and `style_vectors/ref/`. It also generates `diffusion_data.csv` and `ref_data.csv` with relative paths ready to use as `dataset_path` in the config.
+**3. Download metadata**
+```bash
+python download_metadata.py --output_dir metadata --setting 15_forget_speakers --no_style_vectors
+```
 
-**CLI arguments:**
+**4. Run inference**
+```bash
+python infer.py \
+    --model_dir     Models/15_forget_tgu \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/forget_speaker_test_test_clean.csv \
+    --root_path     /path/to/LibriTTS \
+    --output_dir    outputs/15_forget_tgu
+```
 
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--input_csv` | required | CSV with `speaker_files`, `transcript`, `speaker_ids`, `output_files` columns |
-| `--config_path` | `Configs/config_unlearning.yml` | Path to the StyleTTS2 config YAML |
-| `--checkpoint_path` | `Models/LibriTTS/epochs_2nd_00020.pth` | Path to the pretrained checkpoint |
-| `--root_path` | required | Root directory for LibriTTS `.wav` files |
-| `--output_dir` | `style_vectors` | Directory to write `.pt` files and metadata CSVs |
-| `--diffusion_samples` | `2` | Number of independently sampled diffusion vectors per utterance |
-| `--diffusion_steps` | `5` | Number of diffusion sampling steps |
-| `--resume` | off | Skip utterances whose output `.pt` files already exist |
+Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 
 ---
 
-## Configuration
+## Inference
 
-Edit [Configs/config_unlearning.yml](Configs/config_unlearning.yml) before training. Key fields:
+Point `--model_dir` at any downloaded model folder. Each folder contains `config.yml` and `last.pth`.
 
-```yaml
-pretrained_model: "Models/LibriTTS/epochs_2nd_00020.pth"  # Path to 2nd-stage checkpoint
-log_dir: "Models/Unlearning"          # Output directory for checkpoints and logs
-
-data_params:
-  dataset_path: "/path/to/diffusion_data.csv"
-  forget_speaker_file: "/path/to/forget_speaker_train.csv"
-  forget_ratio: 0.6          # Probability of replacing reference with a forget-speaker sample
-  root_path: "/path/to/LibriTTS/wavs"      # root for LibriTTS audio files
-  style_root_path: "/path/to/style_vectors" # root for pre-computed style vectors
-
-epochs: 10
-batch_size: 32
-
-loss_params:
-  lambda_triplet: 1.0        # Triplet loss weight (triplet mode only)
-  margin: 0.3                # Triplet margin (Euclidean distance)
+```bash
+python infer.py \
+    --model_dir     Models/15_forget_tgu \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/forget_speaker_test.csv \
+    --root_path     /path/to/LibriTTS \
+    --output_dir    outputs/
 ```
 
-All model architecture fields under `model_params` must match the pretrained checkpoint.
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--model_dir` | required | Directory containing `config.yml` and `last.pth` |
+| `--inference_csv` | required | CSV with `transcript` and `speaker_files` columns |
+| `--root_path` | `""` | Root directory for LibriTTS `.wav` files |
+| `--output_dir` | `./outputs` | Directory for generated audio |
+| `--utterance_samples` | `0` (all) | Number of utterances to randomly sample (0 = use all) |
+| `--diffusion_samples` | `1` | Independent waveforms to generate per utterance |
+| `--alpha` | `1.0` | Style-encoder interpolation (0 = reference, 1 = predicted) |
+| `--beta` | `1.0` | Predictor-encoder interpolation (0 = reference, 1 = predicted) |
+| `--diffusion_steps` | `5` | Number of diffusion sampling steps |
+| `--seed` | `0` | Random seed for utterance sampling |
 
+---
+
+## Evaluation
+
+To assess unlearning effectiveness, run inference separately on the forget-speaker and retain-speaker test sets and compare the generated audio.
+
+**Forget speakers** (voices the model should have forgotten):
+```bash
+python infer.py \
+    --model_dir     Models/15_forget_tgu \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/forget_speaker_test.csv \
+    --root_path     /path/to/LibriTTS \
+    --output_dir    outputs/eval_forget
+```
+
+**Retain speakers** (voices the model should preserve):
+```bash
+python infer.py \
+    --model_dir     Models/15_forget_tgu \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/retain_speaker_test.csv \
+    --root_path     /path/to/LibriTTS \
+    --output_dir    outputs/eval_retain
+```
+
+Setting `--alpha 1.0 --beta 1.0` (the default) makes the model rely entirely on its diffusion-predicted style, which is the standard setup for unlearning assessment.
+
+Use `forget_speaker_test_test_clean.csv` and `retain_speaker_test_test_clean.csv` for evaluation on the LibriTTS test-clean subset only.
+
+---
+
+## Pre-trained Models
+
+All checkpoints are at [NewGame/targeted-speaker-poisoning](https://huggingface.co/NewGame/targeted-speaker-poisoning).
+
+```bash
+# Download one model (~969 MB)
+python download_weights.py --output_dir Models --setting 15 --mode tgu
+
+# Download all models (~12.4 GB)
+python download_weights.py --output_dir Models
+```
+
+| Folder | Forget speakers | Method |
+|--------|----------------|--------|
+| `pretrained/` | — | Base StyleTTS2 |
+| `1_forget_tgu/` | 1 | Standard |
+| `1_forget_tgu_triplet/` | 1 | Triplet |
+| `1_forget_egu/` | 1 | Standard (EGU) |
+| `1_forget_egu_triplet/` | 1 | Triplet (EGU) |
+| `15_forget_tgu/` | 15 | Standard |
+| `15_forget_tgu_triplet/` | 15 | Triplet |
+| `15_forget_egu/` | 15 | Standard (EGU) |
+| `15_forget_egu_triplet/` | 15 | Triplet (EGU) |
+| `100_forget_tgu/` | 100 | Standard |
+| `100_forget_tgu_triplet/` | 100 | Triplet |
+| `100_forget_egu/` | 100 | Standard (EGU) |
+| `100_forget_egu_triplet/` | 100 | Triplet (EGU) |
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--output_dir` | `Models` | Local directory to save weights |
+| `--pretrained_only` | off | Download only the base pretrained checkpoint |
+| `--setting` | all | `1`, `15`, or `100` |
+| `--mode` | all | `tgu`, `tgu_triplet`, `egu`, or `egu_triplet` |
+| `--token` | None | HuggingFace token (for private repos) |
+
+---
+
+## Data
+
+Metadata for all three settings is on HuggingFace. The raw audio must be downloaded separately from [LibriTTS](https://www.openslr.org/60/).
+
+```bash
+# Download one setting (CSVs only, no style vectors)
+python download_metadata.py --output_dir metadata --setting 15_forget_speakers --no_style_vectors
+
+# Download one setting including style vectors (~2.3 GB)
+python download_metadata.py --output_dir metadata --setting 15_forget_speakers
+
+# Download all settings
+python download_metadata.py --output_dir metadata
+```
+
+| Setting | Forget speakers | Dataset |
+|---------|----------------|---------|
+| `1_forget_speakers` | 1 | [NewGame/libritts-1-forget-speaker](https://huggingface.co/datasets/NewGame/libritts-1-forget-speaker) |
+| `15_forget_speakers` | 15 | [NewGame/libritts-15-forget-speaker](https://huggingface.co/datasets/NewGame/libritts-15-forget-speaker) |
+| `100_forget_speakers` | 100 | [NewGame/libritts-100-forget-speaker](https://huggingface.co/datasets/NewGame/libritts-100-forget-speaker) |
+
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--output_dir` | `metadata` | Local directory to extract files into |
+| `--setting` | all | `1_forget_speakers`, `15_forget_speakers`, or `100_forget_speakers` |
+| `--no_style_vectors` | off | Skip downloading `style_vectors.zip` |
+| `--token` | None | HuggingFace token (for private repos) |
+
+---
 
 ## Training
 
-TGU / EGU
+Edit `data_params` in [Configs/config_unlearning.yml](Configs/config_unlearning.yml) to set your paths:
 
+```yaml
+data_params:
+  dataset_path:        "metadata/LibriTTS/1_forget_speakers/train/diffusion_data.csv"
+  forget_speaker_file: "metadata/LibriTTS/1_forget_speakers/train/forget_speaker_train.csv"
+  root_path:           "/path/to/LibriTTS"
+  style_root_path:     "/path/to/style_vectors"
+```
+
+**Standard mode (TGU / EGU):**
 ```bash
 python train.py --config Configs/config_unlearning.yml --mode standard
 ```
 
-Triplet variants
-
+**Triplet mode:**
 ```bash
-python train.py --config Configs/config_unlearning.yml --mode triplet \
-                --lambda_triplet 1.0
+python train.py --config Configs/config_unlearning.yml --mode triplet --lambda_triplet 1.0
 ```
-
-**All CLI arguments:**
 
 | Argument | Default | Description |
 |----------|---------|-------------|
 | `--config` | `Configs/config_unlearning.yml` | Path to YAML config |
 | `--mode` | `standard` | `standard` or `triplet` |
-| `--forget_ratio` | from config | Probability [0, 1] of substituting a forget-speaker reference during training |
-| `--lambda_triplet` | from config | Weight for the triplet loss (triplet mode only) |
-| `--max_iter` | 60,000 | Train for exactly this many gradient steps, cycling the dataloader as needed. When set, epoch count from config is ignored. |
-| `--comment` | None | Optional suffix appended to the W&B run name |
+| `--forget_ratio` | from config | Probability of substituting a forget-speaker reference [0, 1] |
+| `--lambda_triplet` | from config | Triplet loss weight (triplet mode only) |
+| `--max_iter` | `60,000` | Total gradient steps (cycles the dataloader; overrides epoch count) |
+| `--comment` | None | Suffix appended to the W&B run name |
 
-Checkpoints are saved to `log_dir/` every `save_freq` epochs as `epoch_2nd_NNNNN.pth`, plus a rolling `last.pth`. Training metrics are logged to [Weights & Biases](https://wandb.ai); set `wandb.enable: false` in the config to disable.
+Checkpoints are saved to `log_dir/` as `epoch_2nd_NNNNN.pth` and `last.pth`. Set `wandb.enable: false` in the config to disable W&B logging.
 
-## Inference
+Only the diffusion module is updated during training — all other components are frozen.
+
+---
+
+## Generating Style Vectors (optional)
+
+Style vectors are included in each HuggingFace dataset. To generate them yourself:
 
 ```bash
-python infer.py \
-    --config        path/to/run_dir/config_unlearning.yml \
-    --checkpoint    path/to/run_dir/last.pth \
-    --inference_csv metadata/LibriTTS/1_speaker/test/forget_speaker_test.csv \
-    --root_path     /path/to/LibriTTS \
-    --output_dir    ./outputs \
-    --utterance_samples 5 \
-    --diffusion_samples 3
+python gen_diffusion_ground_truth.py \
+    --input_csv       metadata/LibriTTS/1_forget_speakers/train/retain_speaker_train.csv \
+    --config_path     Models/pretrained/config.yml \
+    --checkpoint_path Models/pretrained/epochs_2nd_00020.pth \
+    --root_path       /path/to/LibriTTS \
+    --output_dir      style_vectors \
+    --diffusion_samples 2 \
+    --resume
 ```
 
-Outputs are written to:
-```
-outputs/
-  ref_files/   — copies of the reference audio files
-  gen_files/
-    <speaker_stem>/
-      sample_0.wav
-      sample_1.wav
-      ...
-```
+Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, and `ref_data.csv`.
 
-**All CLI arguments:**
-
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `--config` | required | Path to the config YAML |
-| `--checkpoint` | required | Path to checkpoint (`.pth`) |
-| `--inference_csv` | required | CSV with `transcript` and `speaker_files` columns |
-| `--root_path` | `""` | Root directory for LibriTTS `.wav` files (prepended to `speaker_files` paths) |
-| `--output_dir` | `./outputs` | Directory for generated audio |
-| `--utterance_samples` | `0` (all) | Number of rows to randomly sample from the CSV |
-| `--diffusion_samples` | `1` | Independent waveforms to generate per utterance |
-| `--alpha` | `1.0` | Style-encoder interpolation weight (0 = full reference, 1 = full predicted) |
-| `--beta` | `1.0` | Predictor-encoder interpolation weight (0 = full reference, 1 = full predicted) |
-| `--diffusion_steps` | `5` | Number of diffusion sampling steps |
-| `--seed` | `0` | Random seed for utterance sampling |
-
-**Alpha / Beta:** Setting both to `1.0` means the model relies entirely on its diffusion-predicted style and is the standard evaluation setup for unlearning assessment. To evaluate how well the forget-speaker's voice has been erased, point `--inference_csv` at the forget-speaker's audio and compare the generated voice against the original.
-
+---
 
 ## Acknowledgements
 

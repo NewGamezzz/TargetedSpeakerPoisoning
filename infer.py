@@ -180,13 +180,15 @@ def synthesise(
 # Main inference runner
 # ---------------------------------------------------------------------------
 def run_inference(args):
-    print(f"Config:     {args.config}")
-    print(f"Checkpoint: {args.checkpoint}")
+    config_path     = os.path.join(args.model_dir, "config.yml")
+    checkpoint_path = os.path.join(args.model_dir, "last.pth")
+
+    print(f"Model dir:  {args.model_dir}")
     print(f"Root path:  {args.root_path or '(none — using absolute paths)'}")
     print(f"Output dir: {args.output_dir}")
     print(f"Alpha={args.alpha}  Beta={args.beta}  Diffusion steps={args.diffusion_steps}")
 
-    model, sampler, model_params = load_model(args.config, args.checkpoint)
+    model, sampler, model_params = load_model(config_path, checkpoint_path)
 
     inference_df = pd.read_csv(args.inference_csv)
     if args.utterance_samples > 0:
@@ -238,16 +240,10 @@ def run_inference(args):
 def _parse_args():
     parser = argparse.ArgumentParser(description="StyleTTS2 unlearning inference")
     parser.add_argument(
-        "--config",
+        "--model_dir",
         type=str,
         required=True,
-        help="Path to the config YAML (typically copied into the run directory by train.py).",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=str,
-        required=True,
-        help="Path to the model checkpoint (.pth). Use 'last.pth' or a specific epoch file.",
+        help="Directory containing 'config.yml' and 'last.pth'.",
     )
     parser.add_argument(
         "--inference_csv",

@@ -1,7 +1,7 @@
 SoundFile
-torchaudio
+torchaudio==2.5.0
 munch
-torch
+torch==2.5.0
 pydub
 pyyaml
 librosa
@@ -14,4 +14,6 @@ einops-exts
 tqdm
 typing
 typing-extensions
+pandas
+phonemizer
 git+https://github.com/resemble-ai/monotonic_align.git
