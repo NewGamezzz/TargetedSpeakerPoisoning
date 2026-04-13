@@ -120,7 +120,7 @@ def download_metadata(
             zip_local = os.path.join(local_base, STYLE_VECTORS_ZIP)
             extract_dir = os.path.join(local_base, "train")
 
-            if os.path.exists(os.path.join(extract_dir, "style_vectors")):
+            if os.path.exists(os.path.join(extract_dir, "diffusion")):
                 print(f"  Style vectors already extracted, skipping.")
             else:
                 print(f"  Downloading style_vectors.zip (~2.3 GB) ...")
@@ -137,6 +137,15 @@ def download_metadata(
                         members = zf.infolist()
                         with tqdm(members, desc="  Extracting", unit="file") as pbar:
                             for member in pbar:
+                                # Strip absolute path prefix; keep from diffusion/ or ref/ onward
+                                name = member.filename.lstrip("/")
+                                for marker in ("diffusion/", "ref/"):
+                                    idx = name.find(marker)
+                                    if idx != -1:
+                                        member.filename = name[idx:]
+                                        break
+                                else:
+                                    continue  # skip entries outside diffusion/ and ref/
                                 zf.extract(member, extract_dir)
                                 pbar.set_postfix(file=member.filename[-40:])
                     os.remove(zip_local)
