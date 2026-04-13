@@ -52,9 +52,8 @@ Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 
 [TO BE WRITTEN]
 
----
-
-## Pre-trained Models
+<details>
+<summary><strong>Pre-trained Models</strong></summary>
 
 All checkpoints are at [NewGame/targeted-speaker-poisoning](https://huggingface.co/NewGame/targeted-speaker-poisoning).
 
@@ -72,9 +71,13 @@ python download_weights.py --output_dir Models
 | `--pretrained_only` | off | Download only the base pretrained checkpoint |
 | `--setting` | all | `1`, `15`, or `100` |
 | `--mode` | all | `tgu`, `tgu_triplet`, `egu`, or `egu_triplet` |
+
+</details>
+
 ---
 
-## Data
+<details>
+<summary><strong>Data</strong></summary>
 
 Metadata for all three settings is on HuggingFace. The raw audio must be downloaded separately from [LibriTTS-R](https://www.openslr.org/141/).
 
@@ -101,9 +104,12 @@ python download_metadata.py --output_dir metadata
 | `--setting` | all | `1_forget_speakers`, `15_forget_speakers`, or `100_forget_speakers` |
 | `--no_style_vectors` | off | Skip downloading `style_vectors.zip` |
 
+</details>
+
 ---
 
-## Training
+<details>
+<summary><strong>Training</strong></summary>
 
 Edit `data_params` in [Configs/config_unlearning.yml](Configs/config_unlearning.yml) to set your paths:
 
@@ -142,9 +148,12 @@ tensorboard --logdir Models/Unlearning
 
 Set `tensorboard.enable: false` in the config to disable logging.
 
+</details>
+
 ---
 
-## Generating Style Vectors (optional)
+<details>
+<summary><strong>Generating Style Vectors (optional)</strong></summary>
 
 Style vectors are included in each HuggingFace dataset. To generate them yourself:
 
@@ -161,8 +170,13 @@ python gen_diffusion_ground_truth.py \
 
 Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, and `ref_data.csv`.
 
+</details>
+
 ---
 
-## Acknowledgements
+<details>
+<summary><strong>Acknowledgements</strong></summary>
 
 This project builds directly on [StyleTTS2](https://github.com/yl4579/StyleTTS2) by Yinghao Aaron Li et al. Please cite the original work if you use this codebase.
+
+</details>
