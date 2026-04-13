@@ -53,7 +53,7 @@ Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 [TO BE WRITTEN]
 
 <details>
-<summary><strong>Pre-trained Models</strong></summary>
+<summary><h2>Pre-trained Models</h2></summary>
 
 All checkpoints are at [NewGame/targeted-speaker-poisoning](https://huggingface.co/NewGame/targeted-speaker-poisoning).
 
@@ -77,7 +77,7 @@ python download_weights.py --output_dir Models
 ---
 
 <details>
-<summary><strong>Data</strong></summary>
+<summary><h2>Data</h2></summary>
 
 Metadata for all three settings is on HuggingFace. The raw audio must be downloaded separately from [LibriTTS-R](https://www.openslr.org/141/).
 
@@ -109,7 +109,7 @@ python download_metadata.py --output_dir metadata
 ---
 
 <details>
-<summary><strong>Training</strong></summary>
+<summary><h2>Training</h2></summary>
 
 Edit `data_params` in [Configs/config_unlearning.yml](Configs/config_unlearning.yml) to set your paths:
 
@@ -153,7 +153,7 @@ Set `tensorboard.enable: false` in the config to disable logging.
 ---
 
 <details>
-<summary><strong>Generating Style Vectors (optional)</strong></summary>
+<summary><h2>Generating Style Vectors (optional)</h2></summary>
 
 Style vectors are included in each HuggingFace dataset. To generate them yourself:
 
@@ -175,7 +175,7 @@ Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, 
 ---
 
 <details>
-<summary><strong>Acknowledgements</strong></summary>
+<summary><h2>Acknowledgements</h2></summary>
 
 This project builds directly on [StyleTTS2](https://github.com/yl4579/StyleTTS2) by Yinghao Aaron Li et al. Please cite the original work if you use this codebase.
 
