@@ -10,7 +10,18 @@ We test the code with Python 3.10.
 ```bash
 pip install -r requirements.txt
 ```
-**2. Install espeak [TODO add version ...]
+**2. Install espeak
+```bash
+git clone https://github.com/espeak-ng/espeak-ng.git
+cd espeak-ng
+git checkout 1.52.0
+sudo apt-get install make autoconf automake libtool pkg-config libpcaudio-dev
+./autogen.sh
+./configure
+make
+sudo make install
+sudo ldconfig
+```
 
 ## Inference
 **1. Download a model**
