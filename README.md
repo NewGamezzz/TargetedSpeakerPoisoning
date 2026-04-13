@@ -167,9 +167,6 @@ Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, 
 </details>
 
 
-<details>
-<summary><h2>Acknowledgements</h2></summary>
+## Acknowledgements
 
 This project builds directly on [StyleTTS2](https://github.com/yl4579/StyleTTS2) by Yinghao Aaron Li et al. Please cite the original work if you use this codebase.
-
-</details>
