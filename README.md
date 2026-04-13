@@ -2,7 +2,6 @@
 
 Machine unlearning for [StyleTTS2](https://github.com/yl4579/StyleTTS2) — fine-tunes the diffusion module to erase a target speaker's voice while preserving synthesis quality for all other speakers.
 
----
 
 ## Install
 We test the code with Python 3.10.
@@ -12,7 +11,6 @@ We test the code with Python 3.10.
 pip install -r requirements.txt
 ```
 
----
 
 ## Inference
 **1. Download a model**
@@ -46,7 +44,6 @@ Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 | `--output_dir` | `./outputs` | Directory for generated audio |
 | `--seed` | `0` | Random seed for utterance sampling |
 
----
 
 ## Evaluation
 
@@ -74,7 +71,6 @@ python download_weights.py --output_dir Models
 
 </details>
 
----
 
 <details>
 <summary><h2>Data</h2></summary>
@@ -106,7 +102,6 @@ python download_metadata.py --output_dir metadata
 
 </details>
 
----
 
 <details>
 <summary><h2>Training</h2></summary>
@@ -150,7 +145,6 @@ Set `tensorboard.enable: false` in the config to disable logging.
 
 </details>
 
----
 
 <details>
 <summary><h2>Generating Style Vectors (optional)</h2></summary>
@@ -172,7 +166,6 @@ Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, 
 
 </details>
 
----
 
 <details>
 <summary><h2>Acknowledgements</h2></summary>
