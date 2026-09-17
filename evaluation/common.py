@@ -95,6 +95,11 @@ def resolve_generated(gen_dir: str, row) -> list:
         if candidate.is_file():
             return [candidate]
 
+    # Flat layout with several diffusion samples: ``<stem>_sample<N>.wav``.
+    samples = sorted(gen_dir.glob(f"{Path(output_name).stem}_sample*.wav"))
+    if samples:
+        return samples
+
     return []
 
 
