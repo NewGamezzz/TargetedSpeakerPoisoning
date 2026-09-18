@@ -36,15 +36,22 @@ for subset in retain forget; do
 done
 
 echo "=== 2/6  WER (Whisper-medium) ===================================="
-python evaluation/wer_eval.py \
-    --inference_csv "$RETAIN_CSV" \
-    --gen_dir       "${OUT_DIR}/retain/gen_files" \
-    --output_dir    "${EVAL_DIR}/wer"
+# The paper reports WER for both the retain and the forget set.
+for subset in retain forget; do
+    csv_var="$(echo "$subset" | tr '[:lower:]' '[:upper:]')_CSV"
+    python evaluation/wer_eval.py \
+        --inference_csv "${!csv_var}" \
+        --gen_dir       "${OUT_DIR}/${subset}/gen_files" \
+        --output_dir    "${EVAL_DIR}/wer_${subset}"
+done
 
 echo "=== 3/6  UTMOS =================================================="
-python evaluation/mos_eval.py \
-    --gen_dir     "${OUT_DIR}/retain/gen_files" \
-    --output_file "${EVAL_DIR}/utmos_scores.txt"
+# Likewise MOS, which the paper reports for both sets.
+for subset in retain forget; do
+    python evaluation/mos_eval.py \
+        --gen_dir     "${OUT_DIR}/${subset}/gen_files" \
+        --output_file "${EVAL_DIR}/utmos_${subset}.txt"
+done
 
 echo "=== 4/6  SSIM (retain and forget) ==============================="
 for subset in retain forget; do

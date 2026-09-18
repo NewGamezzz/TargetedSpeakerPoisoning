@@ -10,7 +10,7 @@ We test the code with Python 3.10.
 ```bash
 pip install -r requirements.txt
 ```
-**2. Install espeak
+**2. Install espeak**
 ```bash
 git clone https://github.com/espeak-ng/espeak-ng.git
 cd espeak-ng
@@ -21,6 +21,15 @@ sudo apt-get install make autoconf automake libtool pkg-config libpcaudio-dev
 make
 sudo make install
 sudo ldconfig
+```
+
+Without root, configure with a user prefix (`./configure --prefix=$HOME/.local`)
+and point phonemizer at the result, otherwise it raises
+`RuntimeError: espeak not installed on your system`:
+
+```bash
+export PHONEMIZER_ESPEAK_LIBRARY=$HOME/.local/lib/libespeak-ng.so.1
+export ESPEAK_DATA_PATH=$HOME/.local/share/espeak-ng-data
 ```
 
 ## Inference
@@ -58,8 +67,9 @@ Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 
 ## Evaluation
 
-Six metrics, matching the paper. Utility is measured on the retain set, privacy
-on the forget set.
+Six metrics, matching the paper. WER and UTMOS are reported for the retain and
+the forget set alike; SSIM is reported for both and contrasted via AUC; FSSIM is
+scored on the forget set.
 
 | Metric | Script | Model | Good |
 |--------|--------|-------|------|
@@ -77,6 +87,31 @@ perfect separation. **FSSIM** is the strong condition: it compares each generate
 utterance against *every* speaker in the forget set, so a model that dodges the
 prompt but still lands on another forgotten voice is caught. `Avg-FSSIM` averages
 over those speakers and `Max-FSSIM` takes the worst case.
+
+### How WER is computed
+
+`wer_eval.py` reports the **mean of the per-utterance rates**, and excludes three
+categories before averaging:
+
+| Exclusion | Flag | Default |
+|---|---|---|
+| Utterance longer than 30s | `--max_duration_sec` | `30.0` |
+| Reference shorter than 3 words | `--min_ref_words` | `3` |
+| Hypothesis over 6 words/sec of audio | `--max_words_per_sec` | `6.0` |
+
+Both of the latter two matter, and they matter in different situations. Against a
+two-word reference a single substitution is already a 100% WER, so short
+references dominate an unweighted mean while saying little about the model — on
+the 15-speaker seen setting they move the reported figure by about 1.6 points. The
+speaking-rate rule catches synthesis that has collapsed into babble; it fires on
+no utterances at all for a healthy model, but removes ten points of WER from a
+forget set whose output has degenerated.
+
+Pass `0` to either flag to disable it. The summary JSON always records
+`average_wer_unfiltered` alongside the headline figure, plus how many utterances
+each rule removed, so the effect of the choice stays visible. It also records
+`corpus_wer` — every edit pooled over every reference word, the usual ASR
+convention — which runs roughly 0.5 points below the per-utterance mean here.
 
 ### Run everything
 
@@ -97,16 +132,16 @@ All scripts read the same inference CSV (`speaker_files`, `transcript`) and the
 `gen_files/` directory written by `infer.py`.
 
 ```bash
-# WER
+# WER — run once per subset
 python evaluation/wer_eval.py \
     --inference_csv metadata/LibriTTS/15_forget_speakers/test/retain_speaker_test_test_clean.csv \
     --gen_dir       outputs/15_forget_tgu/retain/gen_files \
-    --output_dir    outputs/15_forget_tgu/eval/wer
+    --output_dir    outputs/15_forget_tgu/eval/wer_retain
 
-# UTMOS
+# UTMOS — run once per subset
 python evaluation/mos_eval.py \
     --gen_dir     outputs/15_forget_tgu/retain/gen_files \
-    --output_file outputs/15_forget_tgu/eval/utmos_scores.txt
+    --output_file outputs/15_forget_tgu/eval/utmos_retain.txt
 
 # SSIM — run once per subset
 python evaluation/ssim_eval.py \
@@ -142,6 +177,42 @@ aggregate. `auc_eval.py` prints the AUC alone and takes an optional
 The paper compares against rejecting a prompt outright when it matches a forget
 speaker. The threshold is **0.86**, the value the `wavlm-base-plus-sv` model card
 gives for its verification decision.
+
+### Reproduction
+
+Run end to end against the published checkpoints on the full 4837-utterance test
+sets, with no tuning. Paper figures are from
+[arXiv:2603.07551](https://arxiv.org/abs/2603.07551).
+
+**Table IV, 15 seen speakers, TGP** (`--setting 15 --mode tgu`):
+
+| Metric | Ours ℛ | Ours ℱ | Paper ℛ | Paper ℱ |
+|---|---|---|---|---|
+| WER ↓ | 2.73 | 2.73 | 2.77 | 2.74 |
+| MOS ↑ | 4.35 | 4.34 | 4.34 | 4.34 |
+| SSIM (ℛ↑ ℱ↓) | 0.80 | 0.72 | 0.81 | 0.72 |
+| AUC ↑ | 0.67 | — | 0.66 | — |
+| Avg-FSSIM ↓ | — | 0.71 | — | 0.71 |
+| Max-FSSIM ↓ | — | 0.91 | — | 0.91 |
+
+**Table I, 15 unseen speakers, EGP+Triplet** (WER only):
+
+| Metric | Ours ℛ | Ours ℱ | Paper ℛ | Paper ℱ |
+|---|---|---|---|---|
+| WER ↓ | 2.99 | 17.57 | 3.01 | 18.17 |
+
+Every speaker metric lands within 0.01 of the paper. The second table is the
+useful check on WER: most published WERs sit between 2.6 and 3.0, where a match
+proves little, whereas EGP+Triplet degrades its forget set by roughly 6x and that
+blow-up reproduces too.
+
+Inference is deterministic — `infer.py` seeds torch at import, so a rerun of the
+same manifest is bit-identical. Different subsets draw different diffusion noise,
+which moves aggregate SSIM by about 0.003 and WER by about 0.2 points; per
+utterance the same change moves SSIM by 0.12 on average, but the swings cancel.
+WER is the one metric that is unstable on a subsample: even after filtering it
+varies by 1.7 points across 500-utterance draws, because the distribution stays
+heavy-tailed. Report it on the full test set.
 
 
 <details>

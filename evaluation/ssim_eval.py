@@ -56,7 +56,7 @@ def main():
     # One reference is often reused across transcripts; embed each one once.
     reference_cache = {}
     similarity_scores = []
-    successful = failed = 0
+    successful = failed = missing = 0
 
     with open(results_csv, "w", newline="", encoding="utf-8") as file_obj:
         writer = csv.writer(file_obj)
@@ -73,7 +73,9 @@ def main():
 
             generated_paths = resolve_generated(args.gen_dir, row)
             if not generated_paths:
-                failed += 1
+                # Expected whenever the manifest covers more rows than were
+                # synthesised (e.g. infer.py --utterance_samples); not an error.
+                missing += 1
                 continue
 
             if reference_path not in reference_cache:
@@ -116,6 +118,7 @@ def main():
         "model_name": encoder.model_name,
         "successful": successful,
         "failed": failed,
+        "no_generated_audio": missing,
         "average_similarity": float(np.mean(similarity_scores)),
         "min_similarity": float(np.min(similarity_scores)),
         "max_similarity": float(np.max(similarity_scores)),
@@ -126,6 +129,8 @@ def main():
 
     print("\nSpeaker similarity evaluation completed")
     print(f"Successfully processed: {successful} files ({failed} failed)")
+    if missing:
+        print(f"Skipped {missing} manifest rows with no generated audio under {args.gen_dir}")
     print(f"Average similarity (SSIM): {summary['average_similarity']:.4f}")
     print(f"Results CSV: {results_csv}")
     print(f"Summary JSON: {summary_json}")
