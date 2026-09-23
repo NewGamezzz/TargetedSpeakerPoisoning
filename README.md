@@ -2,7 +2,9 @@
 
 Speaker Poisoning for [StyleTTS2](https://github.com/yl4579/StyleTTS2) — fine-tunes the diffusion module to erase a target speaker's voice while preserving synthesis quality for all other speakers.
 
-## Install
+<details>
+<summary><h2>Install</h2></summary>
+
 We test the code with Python 3.10.
 
 **1. Install dependencies**
@@ -31,7 +33,11 @@ export PHONEMIZER_ESPEAK_LIBRARY=$HOME/.local/lib/libespeak-ng.so.1
 export ESPEAK_DATA_PATH=$HOME/.local/share/espeak-ng-data
 ```
 
-## Inference
+</details>
+
+<details>
+<summary><h2>Inference</h2></summary>
+
 **1. Download a model**
 ```bash
 python download_weights.py --output_dir Models --setting 15 --mode tgu
@@ -63,8 +69,10 @@ Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 | `--output_dir` | `./outputs` | Directory for generated audio |
 | `--seed` | `0` | Random seed for utterance sampling |
 
+</details>
 
-## Evaluation
+<details>
+<summary><h2>Evaluation</h2></summary>
 
 Six metrics, matching the paper. WER and UTMOS are reported for the retain and
 the forget set alike; SSIM is reported for both and contrasted via AUC; FSSIM is
@@ -157,6 +165,7 @@ The paper compares against rejecting a prompt outright when it matches a forget
 speaker. The threshold is **0.86**, the value the `wavlm-base-plus-sv` model card
 gives for its verification decision.
 
+</details>
 
 <details>
 <summary><h2>Pre-trained Models</h2></summary>
@@ -276,6 +285,9 @@ Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, 
 </details>
 
 
-## Acknowledgements
+<details>
+<summary><h2>Acknowledgements</h2></summary>
 
 This project builds directly on [StyleTTS2](https://github.com/yl4579/StyleTTS2) by Yinghao Aaron Li et al. Please cite the original work if you use this codebase.
+
+</details>
