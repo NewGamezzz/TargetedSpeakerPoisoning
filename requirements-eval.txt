@@ -1,0 +1,19 @@
+# Evaluation-only dependencies. Install on top of requirements.txt:
+#   pip install -r requirements.txt -r requirements-eval.txt
+
+# WER  -- Whisper ASR + text normalisation + edit distance
+openai-whisper==20250625
+jiwer==4.0.0
+
+# UTMOS -- automatic MOS predictor
+utmos==1.1.10
+
+# SSIM / FSSIM -- WavLM-TDNN speaker verification (transformers), ECAPA (optional)
+speechbrain==1.0.3
+
+# AUC
+scikit-learn==1.3.2
+
+# shared audio I/O
+soundfile
+librosa

@@ -22,6 +22,15 @@ sudo make install
 sudo ldconfig
 ```
 
+Without root, configure with a user prefix (`./configure --prefix=$HOME/.local`)
+and point phonemizer at the result, otherwise it raises
+`RuntimeError: espeak not installed on your system`:
+
+```bash
+export PHONEMIZER_ESPEAK_LIBRARY=$HOME/.local/lib/libespeak-ng.so.1
+export ESPEAK_DATA_PATH=$HOME/.local/share/espeak-ng-data
+```
+
 ## Inference
 **1. Download a model**
 ```bash
@@ -57,7 +66,97 @@ Generated audio will be in `outputs/15_forget_tgu/gen_files/`.
 
 ## Evaluation
 
-[TO BE WRITTEN]
+Six metrics, matching the paper. WER and UTMOS are reported for the retain and
+the forget set alike; SSIM is reported for both and contrasted via AUC; FSSIM is
+scored on the forget set.
+
+| Metric | Script | Model |
+|--------|--------|-------|
+| **WER** | `evaluation/wer_eval.py` | Whisper-medium |
+| **UTMOS** | `evaluation/mos_eval.py` | UTMOS |
+| **SSIM** | `evaluation/ssim_eval.py` | WavLM-TDNN (`microsoft/wavlm-base-plus-sv`) |
+| **AUC** | `evaluation/auc_eval.py` | — |
+| **Avg-FSSIM** | `evaluation/fssim_eval.py` | WavLM-TDNN |
+| **Max-FSSIM** | `evaluation/fssim_eval.py` | WavLM-TDNN |
+
+### How WER is computed
+
+`wer_eval.py` reports the **mean of the per-utterance rates**, and excludes three
+categories before averaging:
+
+| Exclusion | Flag | Default |
+|---|---|---|
+| Utterance longer than 30s | `--max_duration_sec` | `30.0` |
+| Reference shorter than 3 words | `--min_ref_words` | `3` |
+| Hypothesis over 6 words/sec of audio | `--max_words_per_sec` | `6.0` |
+
+Pass `0` to either flag to disable it.
+
+### Run everything
+
+```bash
+bash evaluation/run_eval.sh \
+    Models/15_forget_tgu \
+    metadata/LibriTTS/15_forget_speakers \
+    /path/to/LibriTTS \
+    outputs/15_forget_tgu
+```
+
+This runs inference on both test sets and writes every metric to
+`outputs/15_forget_tgu/eval/`.
+
+### Run one metric at a time
+
+All scripts read the same inference CSV (`speaker_files`, `transcript`) and the
+`gen_files/` directory written by `infer.py`.
+
+```bash
+# WER — run once per subset
+python evaluation/wer_eval.py \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/retain_speaker_test_test_clean.csv \
+    --gen_dir       outputs/15_forget_tgu/retain/gen_files \
+    --output_dir    outputs/15_forget_tgu/eval/wer_retain
+
+# UTMOS — run once per subset
+python evaluation/mos_eval.py \
+    --gen_dir     outputs/15_forget_tgu/retain/gen_files \
+    --output_file outputs/15_forget_tgu/eval/utmos_retain.txt
+
+# SSIM — run once per subset
+python evaluation/ssim_eval.py \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/forget_speaker_test_test_clean.csv \
+    --gen_dir       outputs/15_forget_tgu/forget/gen_files \
+    --root_path     /path/to/LibriTTS \
+    --output_dir    outputs/15_forget_tgu/eval/ssim_forget
+
+# AUC — consumes the two SSIM result CSVs
+python evaluation/auc_eval.py \
+    --retain_csv outputs/15_forget_tgu/eval/ssim_retain/speaker_similarity_results.csv \
+    --forget_csv outputs/15_forget_tgu/eval/ssim_forget/speaker_similarity_results.csv
+
+# FSSIM — enrol the forget speakers first, then score
+python evaluation/compute_embedding.py \
+    --inference_csv metadata/LibriTTS/15_forget_speakers/test/forget_speaker_test_test_clean.csv \
+    --root_path     /path/to/LibriTTS \
+    --output_path   outputs/15_forget_tgu/eval/forget_speaker_embeddings.npy
+
+python evaluation/fssim_eval.py \
+    --inference_csv   metadata/LibriTTS/15_forget_speakers/test/forget_speaker_test_test_clean.csv \
+    --gen_dir         outputs/15_forget_tgu/forget/gen_files \
+    --embeddings_file outputs/15_forget_tgu/eval/forget_speaker_embeddings.npy \
+    --output_file     outputs/15_forget_tgu/eval/fssim.csv
+```
+
+Every script writes a per-utterance CSV plus a `*_summary.json` holding the
+aggregate. `auc_eval.py` prints the AUC alone and takes an optional
+`--output_file`.
+
+### Speaker filtering baseline
+
+The paper compares against rejecting a prompt outright when it matches a forget
+speaker. The threshold is **0.86**, the value the `wavlm-base-plus-sv` model card
+gives for its verification decision.
+
 
 <details>
 <summary><h2>Pre-trained Models</h2></summary>

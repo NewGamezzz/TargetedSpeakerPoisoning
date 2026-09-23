@@ -1,0 +1,19 @@
+# Reproducible environment for training, inference and evaluation.
+#
+#   conda env create -f environment.yml
+#   conda activate targeted-speaker-poisoning
+#
+# On a cluster, prefer an explicit prefix so the environment does not eat into
+# the home-directory inode quota:
+#
+#   conda env create -f environment.yml --prefix /path/to/envs/targeted-speaker-poisoning
+name: targeted-speaker-poisoning
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - ffmpeg
+  - pip:
+      - -r requirements.txt
+      - -r requirements-eval.txt
