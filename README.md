@@ -290,4 +290,6 @@ Outputs `style_vectors/diffusion/`, `style_vectors/ref/`, `diffusion_data.csv`, 
 
 This project builds directly on [StyleTTS2](https://github.com/yl4579/StyleTTS2) by Yinghao Aaron Li et al. Please cite the original work if you use this codebase.
 
+This work was supported by the Office of the Director of National Intelligence (ODNI), Intelligence Advanced Research Projects Activity (IARPA), via the ARTS Program under contract D2023-2308110001. The views and conclusions contained herein are those of the authors and should not be interpreted as necessarily representing the official policies, either expressed or implied, of ODNI, IARPA, or the U.S. Government. The U.S. Government is authorized to reproduce and distribute reprints for governmental purposes notwithstanding any copyright annotation therein.
+
 </details>
