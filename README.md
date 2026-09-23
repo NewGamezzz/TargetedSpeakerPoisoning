@@ -70,14 +70,14 @@ Six metrics, matching the paper. WER and UTMOS are reported for the retain and
 the forget set alike; SSIM is reported for both and contrasted via AUC; FSSIM is
 scored on the forget set.
 
-| Metric | Script | Model | Good |
-|--------|--------|-------|------|
-| **WER** | `evaluation/wer_eval.py` | Whisper-medium | lower |
-| **UTMOS** | `evaluation/mos_eval.py` | UTMOS | higher |
-| **SSIM** | `evaluation/ssim_eval.py` | WavLM-TDNN (`microsoft/wavlm-base-plus-sv`) | higher on retain, lower on forget |
-| **AUC** | `evaluation/auc_eval.py` | — | higher |
-| **Avg-FSSIM** | `evaluation/fssim_eval.py` | WavLM-TDNN | lower |
-| **Max-FSSIM** | `evaluation/fssim_eval.py` | WavLM-TDNN | lower |
+| Metric | Script | Model |
+|--------|--------|-------|
+| **WER** | `evaluation/wer_eval.py` | Whisper-medium |
+| **UTMOS** | `evaluation/mos_eval.py` | UTMOS |
+| **SSIM** | `evaluation/ssim_eval.py` | WavLM-TDNN (`microsoft/wavlm-base-plus-sv`) |
+| **AUC** | `evaluation/auc_eval.py` | — |
+| **Avg-FSSIM** | `evaluation/fssim_eval.py` | WavLM-TDNN |
+| **Max-FSSIM** | `evaluation/fssim_eval.py` | WavLM-TDNN |
 
 **SSIM** is the easy condition: cosine similarity between a generated utterance
 and the prompt it was conditioned on. **AUC** measures how separable the retain
