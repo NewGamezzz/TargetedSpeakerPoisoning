@@ -1,7 +1,6 @@
-# StyleTTS2 Speaker Unlearning
+# Speech Generation Speaker Poisoning: Capability Erasure in Zero-Shot Text-to-Speech
 
-Machine unlearning for [StyleTTS2](https://github.com/yl4579/StyleTTS2) — fine-tunes the diffusion module to erase a target speaker's voice while preserving synthesis quality for all other speakers.
-
+Speaker Poisoning for [StyleTTS2](https://github.com/yl4579/StyleTTS2) — fine-tunes the diffusion module to erase a target speaker's voice while preserving synthesis quality for all other speakers.
 
 ## Install
 We test the code with Python 3.10.
